@@ -1,0 +1,53 @@
+K 25
+svn:wc:ra_dav:version-url
+V 36
+/svn/snaps/!svn/ver/528/FTP_Snap/lib
+END
+commons-net-ftp-2.0.jar
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/svn/snaps/!svn/ver/330/FTP_Snap/lib/commons-net-ftp-2.0.jar
+END
+commons-net-2.0-javadoc.jar
+K 25
+svn:wc:ra_dav:version-url
+V 64
+/svn/snaps/!svn/ver/330/FTP_Snap/lib/commons-net-2.0-javadoc.jar
+END
+commons-net-2.0-sources.jar
+K 25
+svn:wc:ra_dav:version-url
+V 64
+/svn/snaps/!svn/ver/330/FTP_Snap/lib/commons-net-2.0-sources.jar
+END
+commons-codec-1.4.jar
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/svn/snaps/!svn/ver/330/FTP_Snap/lib/commons-codec-1.4.jar
+END
+MANIFEST.MF
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/snaps/!svn/ver/430/FTP_Snap/lib/MANIFEST.MF
+END
+ftpsnap.jar
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/snaps/!svn/ver/528/FTP_Snap/lib/ftpsnap.jar
+END
+commons-net-2.0.jar
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/snaps/!svn/ver/330/FTP_Snap/lib/commons-net-2.0.jar
+END
+javacc.jar
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/svn/snaps/!svn/ver/330/FTP_Snap/lib/javacc.jar
+END

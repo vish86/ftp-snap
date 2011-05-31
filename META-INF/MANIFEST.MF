@@ -1,0 +1,3 @@
+Manifest-Version: 1.0
+SnapLogic-Components: org.com.ftp.FtpConnect, org.com.ftp.FtpDir, org.com.ftp.FtpGet, org.com.ftp.FtpPut, org.com.ftp.FtpDelete
+Created-By: 1.6.0 (IBM Corporation)
