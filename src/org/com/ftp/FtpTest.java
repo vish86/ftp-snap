@@ -12,6 +12,7 @@ import java.net.SocketException;
 
 //FTP imports
 import org.apache.commons.net.ftp.FTPClient;
+import org.apache.commons.net.ftp.FTPClientConfig;
 import org.apache.commons.net.ftp.FTPFile;
 
 import org.apache.commons.net.ftp.FTPSClient;
@@ -47,37 +48,50 @@ public class FtpTest extends TimerTask {
 	
 	public static void FtpGetDirTest(String hostname, String username, String password, String DestDir) 
 	{
-		FTPClient client = new FTPClient();			
+		FTPClientConfig conf = new FTPClientConfig(FTPClientConfig.SYST_UNIX);
+
+		FTPClient client = new FTPClient();	
+		client.configure(conf);
 		ArrayList<Date> ModTimes = new ArrayList();
 		ArrayList<String> FileNames = new ArrayList();
 		
 		FTPFile[] files = null;
 		try {
-			client.connect(hostname);
 			
-			client.login(username, password);
+			client.connect(hostname);
 			client.enterLocalPassiveMode();
+			//client.enterRemotePassiveMode();
+			int pasv = client.pasv();
+			System.out.println("Pasv: " + pasv);
+			
+
+			client.login(username, password);
 			System.out.println((Boolean.toString(client.isConnected())));
-			files = client.listFiles(DestDir);
+			System.out.println("PWD:" + client.printWorkingDirectory());
+			files = client.listFiles();
+			
+			client.changeWorkingDirectory("/EDEN2NEXUS/Vendors/");
+			files = client.listFiles();
+					
 			
 			for(FTPFile f : files)
 			{
 				try
 				{
-				FileNames.add(f.getName());
+//				FileNames.add(f.getName());
 				System.out.println("Name: " + f.getName());
-				System.out.println("Size: " + f.getSize());	
-			
-					System.out.println("Modified Time: " + f.getTimestamp().getTime());
-					ModTimes.add(f.getTimestamp().getTime());
+//				System.out.println("Size: " + f.getSize());	
+//			
+//					System.out.println("Modified Time: " + f.getTimestamp().getTime());
+//					ModTimes.add(f.getTimestamp().getTime());
 				} catch(Exception e)
 				{}
-				System.out.println("\n");
+				//System.out.println("\n");
 			}
 			
-			Collections.sort(ModTimes);
+			//Collections.sort(ModTimes);
 			
-			System.out.println("The latest file is: "+ FileNames.get(ModTimes.size()-1)+ " and was modifed on:" + ModTimes.get(ModTimes.size()-1) );
+			//System.out.println("The latest file is: "+ FileNames.get(ModTimes.size()-1)+ " and was modifed on:" + ModTimes.get(ModTimes.size()-1) );
 					
 		} catch (SocketException e) {
 			// TODO Auto-generated catch block
@@ -258,8 +272,11 @@ public class FtpTest extends TimerTask {
 	
 	public static void main(String args[])
 	{
-		FtpGetDirTest("ftp.operative.com", "pandora", "3FpNEny4", "/Finance/");	
-		System.out.println("Deleted? " + ftpDelete("ftp.operative.com", "pandora", "3FpNEny4", "/snaplogic/", "/Applications/snaplogic/3.1.0.14275PE/", "testboxcsv.csv"));
+		//FtpGetDirTest("ftp.operative.com", "pandora", "3FpNEny4", "/Finance/");	
+		//FtpGetDirTest("ftpnexus.edensandavant.com", "edensftp", "N3xusF7pEd3n", "/EDEN2NEXUS/Vendors/");
+		FtpGetDirTest("ftpnexus.edensandavant.com", "edensftp", "N3xusF7pEd3n", "/EDEN2NEXUS/Vendors/");
+
+		//System.out.println("Deleted? " + ftpDelete("ftp.operative.com", "pandora", "3FpNEny4", "/snaplogic/", "/Applications/snaplogic/3.1.0.14275PE/", "testboxcsv.csv"));
 		//Timertest();
 		//boolean putOrNot = ftpPut("ftp.operative.com", "pandora", "3FpNEny4", "/users/vishwanath/Desktop/", "testboxcsv.csv", null);
 		//System.out.println("Result = "+ putOrNot);

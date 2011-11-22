@@ -25,29 +25,23 @@ import org.snaplogic.snapi.ResDef;
 
 public class FtpGet extends ComponentAPI {
 	
-	public static boolean ftpGet(String hostname, String username, String password, String SourceDir, String DestDir, String filename)
+	public boolean ftpGet(String hostname, String username, String password, String SourceDir, String DestDir, String filename)
 	{
 		boolean got = false;		
 		FTPClient client = new FTPClient();		
-		
+
 		FTPFile[] files = null;
 		try {
-			client.connect(hostname);
-			
+			//Connect to the FTP server in local passive mode
+			client.connect(hostname);			
 			client.login(username, password);
 			client.enterLocalPassiveMode();
-			System.out.println(Boolean.toString(client.isConnected()));
-			//info(Boolean.toString(client.isConnected()));
+			info(Boolean.toString(client.isConnected()));
 			if(SourceDir != null)
 				files = client.listFiles(SourceDir);		
 			else
 				files = client.listFiles();
-			
-			for(FTPFile f : files)
-			{
-				//info(f.getName());
-				System.out.println(f.getName());
-			}
+
 		} catch (SocketException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -57,53 +51,53 @@ public class FtpGet extends ComponentAPI {
 			e.printStackTrace();
 			//info(e.getMessage());
 		}
-				//write files to local FS
-				OutputStream output = null;
-				
-							try {
-								if (DestDir != null)
-								{
-									// check if the targetdir has a / appended or not
-									if (!DestDir.endsWith("/"))
-										DestDir += "/";
+		//write files to local FS
+		OutputStream output = null; 
 
-									// check if the folder exists, if not, create it
-									File targetFolder = new File(DestDir);
-									if (!targetFolder.exists())
-										targetFolder.mkdir();
+		try {
+			if (DestDir != null)
+			{
+				// check if the targetdir has a / appended or not
+				if (!DestDir.endsWith("/"))
+					DestDir += "/";
 
-									output = new FileOutputStream(new File(DestDir + filename));
-								}
-								else
-									output = new FileOutputStream(new File(filename));
-								
-								if(SourceDir != null)
-								{
-									if (!SourceDir.endsWith("/"))
-										SourceDir += "/";
-									got = client.retrieveFile(SourceDir + filename, output);
-								}
-								else
-								{
-									got = client.retrieveFile(filename, output);
-								}
-									
-							} catch (FileNotFoundException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
-							catch (IOException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}	
-							return got;
+				// check if the folder exists, if not, create it
+				File targetFolder = new File(DestDir);
+				if (!targetFolder.exists())
+					targetFolder.mkdir();
+
+				output = new FileOutputStream(new File(DestDir + filename));
+			}
+			else
+				output = new FileOutputStream(new File(filename));
+
+			if(SourceDir != null)
+			{
+				if (!SourceDir.endsWith("/"))
+					SourceDir += "/";
+				got = client.retrieveFile(SourceDir + filename, output);
+			}
+			else
+			{
+				got = client.retrieveFile(filename, output);
+			}
+
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}	
+		return got;
 	} 
 	
 	
 	@Override
 	public void execute(Map<String, InputView> inputVws,
 			Map<String, OutputView> outputVws) {
-		
+
 		//get connection cred's and hostname
 		String serverUri = getStringPropertyValue("Connection");
 		ResDef resdef = this.getLocalResourceObject(serverUri);
@@ -111,51 +105,30 @@ public class FtpGet extends ComponentAPI {
 		// check if the sourcedir has a / appended or not
 		if (!sourcedir.endsWith("/"))
 			sourcedir += "/";
-		
+
 		String targetdir = getStringPropertyValue("DirTarget");
 		// check if the targetdir has a / appended or not
 		if (!targetdir.endsWith("/"))
 			targetdir += "/";
-		
+
 		String filenamePropVal = getStringPropertyValue("File");		
 		String hostname = resdef.getPropertyValue("Host").toString();
 		String username = resdef.getPropertyValue("Username").toString();
 		String password = resdef.getPropertyValue("Password").toString();
-		
-		
+
+
 
 		OutputView outputView = outputVws.values().iterator().next();
 		OutputStream output = null;
 
-		
-		if (filenamePropVal != null && filenamePropVal != "")
-		{
-			boolean result = ftpGet(hostname, username, password, sourcedir, targetdir, filenamePropVal);
-			info("Ftp Get of " + filenamePropVal + " = " + result);
-			
-			//write files to local FS
-			Record outRec = outputView.createRecord();
-			outRec.set("Name", targetdir+filenamePropVal);
-			if(result)
-				outRec.set("Success", "True");
-			else
-				outRec.set("Success", "False");
-			//outRec.transferPassThroughFields(inputRec);
 
-			outputView.writeRecord(outRec);
-			
-			// Complete output views
-			for(OutputView ov: outputVws.values()) {
-				ov.completed();
-			}
-		}
-		
+
 		//Process input record
 		InputView inView = null;
 		if(inputVws.size() > 0) {
 			inView = inputVws.values().iterator().next();
 		}
-		
+
 		if(inView != null) {			
 			while(true) {
 				Record inputRec = inView.readRecord();
@@ -163,13 +136,11 @@ public class FtpGet extends ComponentAPI {
 					break;
 				}
 				String file = inputRec.getString("FileName").toString();
-				info(file);
-				
-				
-				
+				info(file);				
+
 				boolean result = ftpGet(hostname, username, password, sourcedir, targetdir, file);
 				info("ftpget of " + file + " = " + result);
-				
+
 				//write files to local FS
 				Record outRec = outputView.createRecord();
 				outRec.set("Name", targetdir+file);
@@ -179,17 +150,41 @@ public class FtpGet extends ComponentAPI {
 					outRec.set("Success", "False");
 				outRec.transferPassThroughFields(inputRec);
 
-				outputView.writeRecord(outRec);
-				
+				outputView.writeRecord(outRec);			
 
 			}
-	}
+		}
 		
+		
+
+		
+		// If filename property has a value, get that file
+		if (filenamePropVal != null && filenamePropVal != "")
+		{
+			boolean result = ftpGet(hostname, username, password, sourcedir, targetdir, filenamePropVal);
+			info("Ftp Get of " + filenamePropVal + " = " + result);
+
+			Record outRec = outputView.createRecord();
+			outRec.set("Name", targetdir+filenamePropVal);
+			if(result)
+				outRec.set("Success", "True");
+			else
+				outRec.set("Success", "False");
+
+			outputView.writeRecord(outRec);
+
+//			// Complete output views
+//			for(OutputView ov: outputVws.values()) {
+//				ov.completed();
+//			}
+		}	
 		
 		// Complete output views
 		for(OutputView ov: outputVws.values()) {
 			ov.completed();
 		}
+		
+		
 		
 }
 		
@@ -243,7 +238,7 @@ public class FtpGet extends ComponentAPI {
        
         ArrayList<Field> fields = new ArrayList<Field>();
     	fields.add(new Field("FileName",Field.SnapFieldType.SnapString,"File name or * for all files"));
-    	addRecordInputViewDef("Input",fields,"FTPGet Input",true);
+    	addRecordInputViewDef("Input",fields,"FTP Get Input",true);
         
         fields = new ArrayList<Field>();
         fields.add(new Field("Name",Field.SnapFieldType.SnapString,"Object Name"));        
@@ -254,10 +249,8 @@ public class FtpGet extends ComponentAPI {
 	@Override
 	public void validate(ComponentResourceErr resdefError) {
 		/**
-		 * Check if no input and filename prop blank then error.
-		 */
-		
-		
+		 * TODO: Check if no input and filename property blank then error.
+		 */			
 	}
 }
 

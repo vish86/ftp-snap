@@ -22,55 +22,85 @@ import org.snaplogic.snapi.PropertyConstraint;
 import org.snaplogic.snapi.ResDef;
 
 public class FtpDir extends ComponentAPI {
-	
-	private FTPClient client;
-	public static FTPFile[] FtpGetDirTest(String hostname, String username, String password, String DestDir) 
+
+	public FTPFile[] FtpGetDir(String hostname, String username, String password, String DestDir) 
 	{
 		FTPClient client = new FTPClient();			
 		ArrayList<Date> ModTimes = new ArrayList();
 		ArrayList<String> FileNames = new ArrayList();
-		
+
 		FTPFile[] files = null;
 		try {
-			client.connect(hostname);
-			
-			client.login(username, password);
+			// Connect to the FTP server
+			client.connect(hostname);			
 			client.enterLocalPassiveMode();
-			System.out.println((Boolean.toString(client.isConnected())));
+			client.login(username, password);
+
+			info(("Connected to the server: " + Boolean.toString(client.isConnected())));
 			if(DestDir != null && DestDir != "")
-				files = client.listFiles(DestDir);
+			{
+				/**
+				 * This is the expected way to list the directory. Noticed that this does not always work,
+				 * eg. on Edens and Avant's FTP server. If the list files returns an empty array, change working directory 
+				 * and then do a list files with no arguments.
+				 */
+//				debug("Destination dir" + DestDir);
+//				files = client.listFiles(DestDir);
+
+				/**
+				 * Special case
+				 */
+				debug("Special case: change working directory and then listfiles() instead of listfiles(dir)");
+				debug("Changing working dir to..... " + DestDir);
+				client.changeWorkingDirectory(DestDir);
+				files = client.listFiles();
+			}
 			else
-				files = client.listFiles();			
-			
+			{
+				debug("Root dir");
+				files = client.listFiles();		
+			}
+
 			for(FTPFile f : files)
 			{
-				try
-				{
-				FileNames.add(f.getName());
-				System.out.println("Name: " + f.getName());
-				System.out.println("Size: " + f.getSize());	
-			
-					System.out.println("Modified Time: " + f.getTimestamp().getTime());
-					ModTimes.add(f.getTimestamp().getTime());
-				} catch(Exception e)
-				{}
-				System.out.println("\n");
+//				try
+//				{
+//					FileNames.add(f.getName());				
+//					ModTimes.add(f.getTimestamp().getTime());
+//					debug("Displaying all filenames");
+//					debug("Name: " + f.getName() + ", Size: " + f.getSize() + ", Modified Time" + f.getTimestamp().getTime());
+//
+//				} catch(Exception e)
+//				{}
 			}
+//
+//			Collections.sort(ModTimes);
+//			info("The latest file is: "+ FileNames.get(ModTimes.size()-1)+ " and was modified on:" + ModTimes.get(ModTimes.size()-1) );
+
+			//info ("Logging out.... Success + " + client.logout());
+			//client.disconnect();
 			
-			Collections.sort(ModTimes);
-			
-			System.out.println("The latest file is: "+ FileNames.get(ModTimes.size()-1)+ " and was modifed on:" + ModTimes.get(ModTimes.size()-1) );
-					
 		} catch (SocketException e) {
 			// TODO Auto-generated catch block
-			//e.printStackTrace();
-			System.out.println((e.getMessage()));
+			e.printStackTrace();
+			info("IO Exception - Could not display the specified directory");
+
+			//info((e.getMessage()));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
-			System.out.println((e.getMessage()));
+			info("IO Exception - Could not display the specified directory");
+			e.printStackTrace();
+			//info((e.getMessage()));			
+		} catch(Exception oe) {
+			info("IO Exception - Could not display the specified directory");
+
+			oe.printStackTrace();
 		}
+		
+	
 		return files;
 	}
+	
 	
 	@Override
 	public void execute(Map<String, InputView> arg0,
@@ -81,38 +111,35 @@ public class FtpDir extends ComponentAPI {
 		String hostname = resdef.getPropertyValue("Host").toString();
 		String username = resdef.getPropertyValue("Username").toString();
 		String password = resdef.getPropertyValue("Password").toString();
-	
-		FTPFile[]  files = FtpGetDirTest(hostname, username, password, pathname);
+
+		FTPFile[]  files = FtpGetDir(hostname, username, password, pathname);
 		try
 		{
-				OutputView outputView = arg1.values().iterator().next(); 
-				Record outRec = outputView.createRecord();
-				for(int i =0; i < files.length ;i++)
+			OutputView outputView = arg1.values().iterator().next(); 
+			Record outRec = outputView.createRecord();
+			for(int i =0; i < files.length ;i++)
+			{
+				outRec.set("Name", files[i].getName());
+				if(files[i].isDirectory())
 				{
-					outRec.set("Name", files[i].getName());
-//					if(files[i].getType() == 0)
-//						outRec.set("Type", "Directory");
-//					else
-//						outRec.set("Type", "File");
-					if(files[i].isDirectory())
-					{
-						outRec.set("Type", "Directory");
-					}
-					else if (files[i].isFile())
-					{
-						outRec.set("Type", "File");
-					}
-					else
-					{
-						outRec.set("Type", "Unknown");
-					}
-					outRec.set("User", files[i].getUser());
-					outRec.set("Group", files[i].getGroup());
-					outRec.set("Size", Long.toString(files[i].getSize()));
-					outRec.set("TimeStamp", files[i].getTimestamp().getTime().toString());
-					outputView.writeRecord(outRec);
+					outRec.set("Type", "Directory");
 				}
-				outputView.completed();
+				else if (files[i].isFile())
+				{
+					outRec.set("Type", "File");
+				}
+				else
+				{
+					outRec.set("Type", "Unknown");
+				}
+				outRec.set("User", files[i].getUser());
+				outRec.set("Group", files[i].getGroup());
+				outRec.set("Size", Long.toString(files[i].getSize()));
+				outRec.set("TimeStamp", files[i].getTimestamp().getTime().toString());
+				outputView.writeRecord(outRec);
+			}
+			// Complete output view
+			outputView.completed();
 		}
 		catch(Exception e){	
 			info(e.getMessage());
@@ -151,7 +178,7 @@ public class FtpDir extends ComponentAPI {
 			 */
 			private static final long serialVersionUID = 1L;
 
-		{
+			{
 	           put(Capability.INPUT_VIEW_LOWER_LIMIT, 0);
 	           put(Capability.INPUT_VIEW_UPPER_LIMIT, 0);
 	           put(Capability.OUTPUT_VIEW_LOWER_LIMIT, 1);
@@ -164,6 +191,7 @@ public class FtpDir extends ComponentAPI {
 		String[] options = {"YES", "NO"};
         setPropertyDef("Connection", new SimpleProp("Connection", SimplePropType.SnapString, "Connection Resource to FTP Server", true));
         setPropertyDef("Dir", new SimpleProp("Dir", SimplePropType.SnapString, "Directory to browse or blank for root", false));
+        //TODO: Add limit on the number of files
         //setPropertyDef("NumberOfFiles", new SimpleProp("NumberOfFiles", SimplePropType.SnapString, "Number of filenames to retrieve or blank for all files", false));
         setPropertyDef("SortFiles", new SimpleProp("SortFiles", SimplePropType.SnapString, "Sort files by last modified date", new PropertyConstraint(PropertyConstraint.Type.LOV, options), true));
                 

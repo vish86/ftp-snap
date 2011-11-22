@@ -48,8 +48,8 @@ public class FtpConnect extends ComponentAPI {
 		
 		try {
 			cli.connect(hostname);
-			boolean login = cli.login(username, password);
 			cli.enterLocalPassiveMode();
+			boolean login = cli.login(username, password);
 			boolean status = cli.isConnected();
 			if(!login){
 				resdefError.setMessage("Could not connect to FTP server!", null);

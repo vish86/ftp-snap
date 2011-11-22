@@ -314,6 +314,10 @@ public class SFTP {
   public static class MyUserInfo implements UserInfo, UIKeyboardInteractive{
     public String getPassword(){ return passwd; }
     public boolean promptYesNo(String str){
+    	
+    	System.out.println("Str = " + str);
+    	System.out.println(JOptionPane.DEFAULT_OPTION + JOptionPane.WARNING_MESSAGE);
+    	
       Object[] options={ "yes", "no" };
       int foo=JOptionPane.showOptionDialog(null, 
              str,

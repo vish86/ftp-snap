@@ -1,6 +1,5 @@
 package org.com.ftp;
 
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -26,18 +25,18 @@ import org.snaplogic.snapi.ResDef;
 
 public class FtpDelete extends ComponentAPI {
 	
-	public static boolean ftpDelete(String hostname, String username, String password, String SourceDir, String filename)
+	public boolean ftpDelete(String hostname, String username, String password, String SourceDir, String filename)
 	{
 		boolean deleted = false;		
 		FTPClient client = new FTPClient();		
 		
+		//Connect to the FTP server in local passive mode
 		try {
 			client.connect(hostname);
-			
 			client.login(username, password);
 			client.enterLocalPassiveMode();
-			System.out.println(Boolean.toString(client.isConnected()));
-			
+			info(Boolean.toString(client.isConnected()));
+
 		} catch (SocketException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -47,29 +46,28 @@ public class FtpDelete extends ComponentAPI {
 			e.printStackTrace();
 			//info(e.getMessage());
 		}
-				try
-				{
-								
-								if(SourceDir != null)
-								{
-									if (!SourceDir.endsWith("/"))
-										SourceDir += "/";
-									deleted = client.deleteFile(SourceDir + filename);
-								}
-								else
-								{
-									deleted = client.deleteFile(filename);
-								}
-									
-							} catch (FileNotFoundException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
-							catch (IOException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}	
-							return deleted;
+		try
+		{
+			if(SourceDir != null)
+			{
+				if (!SourceDir.endsWith("/"))
+					SourceDir += "/";
+				deleted = client.deleteFile(SourceDir + filename);
+			}
+			else
+			{
+				deleted = client.deleteFile(filename);
+			}
+
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}	
+		return deleted;
 	}  
 		
 	
@@ -78,10 +76,16 @@ public class FtpDelete extends ComponentAPI {
 	public void execute(Map<String, InputView> inputVws,
 			Map<String, OutputView> outputVws) {
 		
+		boolean result = false;
+		
 		//get connection cred's and hostname
 		String serverUri = getStringPropertyValue("Connection");
 		ResDef resdef = this.getLocalResourceObject(serverUri);
-		String sourcedir = getStringPropertyValue("DirSource");		
+		String sourcedir = getStringPropertyValue("DirSource");	
+		// check if the sourcedir has a / appended or not
+		if (!sourcedir.endsWith("/"))
+			sourcedir += "/";
+		
 		String filenamePropVal = getStringPropertyValue("File");
 
 		String hostname = resdef.getPropertyValue("Host").toString();
@@ -91,35 +95,13 @@ public class FtpDelete extends ComponentAPI {
 		OutputView outputView = outputVws.values().iterator().next();
 		OutputStream output = null;
 		
-		if (filenamePropVal != null && filenamePropVal != "")
-		{
-			boolean result = ftpDelete(hostname, username, password, sourcedir, filenamePropVal);
-			info("Ftp Delete of " + filenamePropVal + " = " + result);
-			
-			//write files to local FS
-			Record outRec = outputView.createRecord();
-			outRec.set("Name", filenamePropVal);
-			if(result)
-				outRec.set("Success", "True");
-			else
-				outRec.set("Success", "False");
-			//outRec.transferPassThroughFields(inputRec);
 
-			outputView.writeRecord(outRec);
-			
-			// Complete output views
-			for(OutputView ov: outputVws.values()) {
-				ov.completed();
-			}
-		}
 		
 		//Process input record
 		InputView inView = null;
 		if(inputVws.size() > 0) {
 			inView = inputVws.values().iterator().next();
 		}
-
-		
 
 		if(inView != null) {			
 			while(true) {
@@ -128,16 +110,13 @@ public class FtpDelete extends ComponentAPI {
 					break;
 				}
 				String file = inputRec.getString("FileName").toString();
-				
-				info(file);
-				
-				
-				boolean result = ftpDelete(hostname, username, password, sourcedir, file);
+								
+				result = ftpDelete(hostname, username, password, sourcedir, file);
 				info("Ftp Delete of " + file + " = " + result);
 				
 				//write files to local FS
 				Record outRec = outputView.createRecord();
-				outRec.set("Name", file);
+				outRec.set("Name", sourcedir+file);
 				if(result)
 					outRec.set("Success", "True");
 				else
@@ -145,15 +124,38 @@ public class FtpDelete extends ComponentAPI {
 				outRec.transferPassThroughFields(inputRec);
 
 				outputView.writeRecord(outRec);
-				
-		
-		
+	
 			}
 	}
+
+		
+		
+		// If filename property has a value, delete that file
+		if (filenamePropVal != null && filenamePropVal != "")
+		{
+			result = ftpDelete(hostname, username, password, sourcedir, filenamePropVal);
+			info("Ftp Delete of " + filenamePropVal + " = " + result);
+			
+			//write files to local FS
+			Record outRec = outputView.createRecord();
+			outRec.set("Name", sourcedir+filenamePropVal);
+			if(result)
+				outRec.set("Success", "True");
+			else
+				outRec.set("Success", "False");
+			outputView.writeRecord(outRec);
+			
+//			// Complete output views
+//			for(OutputView ov: outputVws.values()) {
+//				ov.completed();
+//			}
+		}
+		
 		// Complete output views
 		for(OutputView ov: outputVws.values()) {
 			ov.completed();
 		}
+		
 	}
 		
 
@@ -189,7 +191,7 @@ public class FtpDelete extends ComponentAPI {
 			 */
 			private static final long serialVersionUID = 1L;
 
-		{
+			{
 	           put(Capability.INPUT_VIEW_LOWER_LIMIT, 0);
 	           put(Capability.INPUT_VIEW_UPPER_LIMIT, 1);
 	           put(Capability.OUTPUT_VIEW_LOWER_LIMIT, 1);
@@ -205,7 +207,7 @@ public class FtpDelete extends ComponentAPI {
        
         ArrayList<Field> fields = new ArrayList<Field>();
     	fields.add(new Field("FileName",Field.SnapFieldType.SnapString,"File name or * for all files"));
-    	addRecordInputViewDef("Input",fields,"FTPGet Input",true);
+    	addRecordInputViewDef("Input",fields,"FTP Delete Input",true);
         
         fields = new ArrayList<Field>();
         fields.add(new Field("Name",Field.SnapFieldType.SnapString,"Object Name"));
@@ -217,10 +219,9 @@ public class FtpDelete extends ComponentAPI {
 	@Override
 	public void validate(ComponentResourceErr resdefError) {
 		/**
-		 * Check if no input and filename prop blank then error.
+		 * TODO: Check if no input and filename prop blank then error.
 		 */
-		
-		
+				
 	}
 }
 
